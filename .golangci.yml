@@ -1,0 +1,123 @@
+version: "2"
+
+run:
+  timeout: 5m
+  relative-path-mode: gomod
+  issues-exit-code: 1
+  tests: false
+  modules-download-mode: readonly
+
+output:
+  formats:
+    text:
+      print-linter-name: true
+      print-issued-lines: true
+      colors: true
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  uniq-by-line: true
+
+linters:
+  default: standard
+  enable:
+    # Обработка ошибок
+    - errcheck          # Проверяет, что ошибки не игнорируются
+    - err113            # Требует обёрнутые ошибки через fmt.Errorf с %w
+    - errorlint         # Рекомендует errors.Is / errors.As вместо прямых сравнений
+    - errname           # Проверяет именование ошибок (Err-префикс)
+    - noctx             # Проверяет, что HTTP-запросы используют контекст
+
+    # Статический анализ и баги
+    - staticcheck       # Глубокий статический анализ (gosimple, stylecheck)
+    - govet             # Встроенный анализатор Go (потенциальные баги)
+    - gocritic          # Продвинутые правила качества кода
+    - bodyclose         # Проверяет закрытие resp.Body
+    - sqlclosecheck     # Проверяет закрытие sql.Rows/Stmt
+    - rowserrcheck      # Проверяет обработку ошибок rows.Err()
+    - durationcheck     # Находит ошибки при умножении time.Duration
+    - makezero          # Проверяет корректность make с ненулевой длиной и append
+    - asasalint         # Проверяет передачу []any в variadic-функции
+    - contextcheck      # Проверяет, что context.Context передаётся в функции
+    - containedctx      # Предупреждает, если context.Context хранится в структуре
+
+    # Стиль и качество кода
+    - revive            # Проверяет стиль, оформление, именование
+    - unused            # Находит неиспользуемые переменные, типы, функции
+    - ineffassign       # Обнаруживает неиспользуемые присваивания
+    - unparam           # Находит неиспользуемые параметры функций
+    - predeclared       # Предупреждает о переопределении встроенных идентификаторов
+    - asciicheck        # Предупреждает о не-ASCII символах в идентификаторах
+    - godot             # Проверяет наличие точки в конце комментариев
+    - godox             # Находит TODO/FIXME/BUG в комментариях
+    - misspell          # Находит опечатки в комментариях и строках
+    - whitespace        # Проверяет лишние пустые строки в начале/конце функций
+    - nakedret          # Предупреждает об использовании naked return в длинных функциях
+    - nolintlint        # Проверяет корректность //nolint-директив
+    - goprintffuncname  # Проверяет, что Printf-подобные функции заканчиваются на 'f'
+    - dogsled           # Проверяет избыточные пустые присваивания (_ , _ , _ , val)
+
+    # Сложность
+    - cyclop            # Контролирует цикломатическую сложность функций
+    - gocognit          # Когнитивная сложность (дополняет cyclop)
+    - nestif            # Проверяет глубину вложенности if-ов
+
+    # Дублирование и ресурсы
+    - dupl              # Находит дублированные фрагменты кода
+    - goconst           # Находит строки/числа, которые можно вынести в константы
+    - mnd               # Обнаруживает магические числа
+    - prealloc          # Рекомендует предаллокацию slice-ов
+
+    # Безопасность
+    - gosec             # Проверка на уязвимости и небезопасные практики
+
+    # Контроль зависимостей
+    - importas          # Проверяет алиасы при импорте пакетов
+
+    # Специфичные
+    - exhaustive        # Проверяет полноту switch по enum
+    - lll               # Проверяет длину строк
+    - thelper           # Проверяет t.Helper() в тестовых хелперах
+    - tparallel         # Проверяет использование t.Parallel() в тестах
+    - testpackage       # Проверяет, что тесты в отдельном пакете _test
+    - wastedassign      # Находит присваивания, результат которых не используется
+    - zerologlint       # Проверяет корректность использования zerolog
+
+  disable:
+    - gocyclo           # Заменён на cyclop
+    - wrapcheck         # Слишком шумный для большинства проектов
+
+  settings:
+    revive:
+      rules:
+        - name: unexported-return
+          disabled: true
+
+    cyclop:
+      max-complexity: 15
+
+    lll:
+      line-length: 130
+
+    gosec:
+      config:
+        global:
+          audit: true
+          show-ignored: true
+        severity: "medium"
+        confidence: "low"
+
+formatters:
+  enable:
+    - gofumpt
+    - gci
+  settings:
+    gofumpt:
+      extra-rules: true
+    gci:
+      sections:
+        - Standard
+        - Default
+        - Prefix(github.com/ponchik327/ImageProcessor/)
+      custom-order: true

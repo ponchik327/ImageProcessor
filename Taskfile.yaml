@@ -1,0 +1,59 @@
+version: '3'
+
+tasks:
+  lint:
+    desc: "Запускает golangci-lint"
+    silent: true
+    cmds:
+      - pre-commit run golangci-lint --all-files
+
+  run:
+    desc: "Запускает приложение используя конфиг"
+    silent: true
+    cmds:
+      - go run ./cmd/app/main.go --config config.yaml
+
+  docker:up:
+    desc: "Поднимает все Docker-контейнеры"
+    cmds:
+      - docker compose up -d
+
+  docker:rebuild:
+    desc: "Пересобирает образ приложения и перезапускает контейнер"
+    cmds:
+      - docker compose up -d --build app
+
+  docker:logs:
+    desc: "Показывает логи приложения в реальном времени"
+    cmds:
+      - docker compose logs -f app
+
+  docker:down:
+    desc: "Останавливает и удаляет все Docker-контейнеры"
+    cmds:
+      - docker compose down
+
+  test:
+    desc: "Запускает все тесты"
+    silent: true
+    cmds:
+      - go test ./...
+
+  test:coverage:
+    desc: "Запускает тесты и показывает покрытие по пакетам"
+    silent: true
+    cmds:
+      - go test -coverprofile=coverage.out ./...
+      - go tool cover -func=coverage.out
+
+  test:coverage:html:
+    desc: "Открывает HTML-отчёт покрытия в браузере"
+    silent: true
+    cmds:
+      - go test -coverprofile=coverage.out ./...
+      - go tool cover -html=coverage.out
+
+  docker:down:volumes:
+    desc: "Останавливает контейнеры и удаляет все volumes"
+    cmds:
+      - docker compose down -v
