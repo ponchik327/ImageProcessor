@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Image Processor</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Image Processor</h1>
+  </header>
+
+  <main>
+    <section class="upload-section">
+      <h2>Upload Image</h2>
+      <form id="upload-form">
+        <label class="file-label" for="file-input">
+          <span id="file-label-text">Choose a JPEG or PNG file…</span>
+          <input type="file" id="file-input" accept="image/jpeg,image/png" required />
+        </label>
+        <button type="submit" id="upload-btn">Upload &amp; Process</button>
+      </form>
+      <p id="upload-error" class="error-msg hidden"></p>
+    </section>
+
+    <section class="gallery-section">
+      <h2>Images</h2>
+      <div id="image-grid"></div>
+      <p id="empty-msg" class="empty-msg hidden">No images yet. Upload one above.</p>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

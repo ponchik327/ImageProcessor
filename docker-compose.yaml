@@ -1,0 +1,87 @@
+services:
+
+  # ── migrations (runs once, exits 0) ──────────────────────────────────────
+  migrate:
+    build: .
+    command: ["--migrate", "--config", "/app/config/config.yaml"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_DSN: "postgres://imguser:imgpass@postgres:5432/imageprocessor?sslmode=disable"
+    volumes:
+      - ./config.yaml:/app/config/config.yaml:ro
+    restart: on-failure
+
+  # ── application (API + worker) ───────────────────────────────────────────
+  app:
+    build: .
+    command: ["--config", "/app/config/config.yaml"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
+    environment:
+      DATABASE_DSN: "postgres://imguser:imgpass@postgres:5432/imageprocessor?sslmode=disable"
+      KAFKA_BROKERS: "kafka:9092"
+      STORAGE_BASE_PATH: "/app/storage"
+      STORAGE_WATERMARK_PATH: "/app/assets/watermark.png"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config.yaml:/app/config/config.yaml:ro
+      - storage_data:/app/storage
+      - ./assets:/app/assets:ro
+
+  # ── postgres ─────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: imageprocessor
+      POSTGRES_USER: imguser
+      POSTGRES_PASSWORD: imgpass
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U imguser -d imageprocessor"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── zookeeper ────────────────────────────────────────────────────────────
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.7.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      KAFKA_OPTS: "-Dzookeeper.4lw.commands.whitelist=ruok,srvr"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/localhost/2181 && echo ruok >&3 && cat <&3' | grep imok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── kafka ────────────────────────────────────────────────────────────────
+  kafka:
+    image: confluentinc/cp-kafka:7.7.0
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092"
+      KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:9092"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+volumes:
+  pg_data:
+  storage_data:
