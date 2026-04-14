@@ -1,0 +1,39 @@
+http:
+  host: "0.0.0.0"
+  port: 8080
+  read_timeout: "10s"
+  write_timeout: "30s"   # должен быть больше времени обработки загружаемых файлов
+  idle_timeout: "60s"
+  shutdown_timeout: "30s" # время на завершение активных запросов при остановке
+
+database:
+  dsn: "postgres://imguser:imgpass@localhost:5432/imageprocessor?sslmode=disable"
+  max_pool_size: 20  # максимум одновременных соединений с БД
+  max_attempts: 10   # попыток подключения при старте (с экспоненциальным backoff)
+
+kafka:
+  brokers:
+    - "localhost:9092"
+  topic: "image-processing-tasks"  # топик для задач обработки
+  group_id: "image-processor-group"
+  dlq_topic: ""         # Dead Letter Queue — топик для сообщений, которые не удалось обработать;
+                        # если пустой, сообщения отбрасываются после max_attempts попыток
+  max_attempts: 5       # попыток обработки одного сообщения перед отправкой в DLQ
+  base_retry_delay: "100ms"
+  max_retry_delay: "5s" # максимальная пауза между повторными попытками (экспоненциальный backoff)
+
+storage:
+  base_path: "./storage"              # директория для хранения файлов на диске
+  watermark_path: "./assets/watermark.png" # PNG-файл накладываемого водяного знака
+
+processing:
+  resize:
+    width: 800
+    height: 600
+  thumbnail:
+    width: 150
+    height: 150
+
+log:
+  level: "info"  # debug | info | warn | error
+  env: "dev"     # dev — human-readable вывод; prod — JSON-формат
