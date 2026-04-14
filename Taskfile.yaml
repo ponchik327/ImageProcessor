@@ -33,24 +33,46 @@ tasks:
     cmds:
       - docker compose down
 
-  test:
-    desc: "Запускает все тесты"
+  test:unit:
+    desc: "Запускает unit-тесты"
     silent: true
     cmds:
-      - go test ./...
+      - go test -count=1 -race ./...
 
-  test:coverage:
-    desc: "Запускает тесты и показывает покрытие по пакетам"
+  test:integration:
+    desc: "Запускает интеграционные тесты через testcontainers (требуется Docker)"
     silent: true
     cmds:
-      - go test -coverprofile=coverage.out ./...
+      - go test -count=1 -tags integration -timeout 300s
+          ./internal/kafka/
+          ./internal/repository/image_repo/
+          ./internal/repository/variant_repo/
+
+  test:all:
+    desc: "Запускает все тесты: unit + интеграционные (требуется Docker)"
+    silent: true
+    cmds:
+      - go test -count=1 -tags integration -race -timeout 300s ./...
+
+  test:coverage:unit:
+    desc: "Покрытие unit-тестов по всем пакетам"
+    silent: true
+    cmds:
+      - go test -count=1 -covermode=atomic -coverprofile=coverage.out ./...
+      - go tool cover -func=coverage.out
+
+  test:coverage:integration:
+    desc: "Покрытие интеграционных тестов по пакетам с интеграционными тестами"
+    silent: true
+    cmds:
+      - go test -count=1 -tags integration -timeout 300s -covermode=atomic -coverprofile=coverage.out ./internal/kafka/ ./internal/repository/image_repo/ ./internal/repository/variant_repo/
       - go tool cover -func=coverage.out
 
   test:coverage:html:
-    desc: "Открывает HTML-отчёт покрытия в браузере"
+    desc: "Открывает HTML-отчёт покрытия всех тестов в браузере (требуется Docker)"
     silent: true
     cmds:
-      - go test -coverprofile=coverage.out ./...
+      - go test -count=1 -tags integration -timeout 300s -covermode=atomic -coverprofile=coverage.out ./...
       - go tool cover -html=coverage.out
 
   docker:down:volumes:
