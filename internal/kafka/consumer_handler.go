@@ -10,18 +10,22 @@ import (
 
 	"github.com/ponchik327/ImageProcessor/internal/domain"
 	"github.com/ponchik327/ImageProcessor/internal/processor"
-	"github.com/ponchik327/ImageProcessor/internal/service"
 )
+
+// imageService — минимальный контракт сервиса, необходимый ConsumerHandler.
+type imageService interface {
+	ProcessTask(ctx context.Context, task *domain.Task, registry processor.Registry) error
+}
 
 // ConsumerHandler декодирует Kafka-сообщения и передаёт их сервису для обработки.
 type ConsumerHandler struct {
-	svc      *service.Service
+	svc      imageService
 	registry processor.Registry
 	log      logger.Logger
 }
 
 // NewConsumerHandler создаёт ConsumerHandler с заданным сервисом и реестром обработчиков.
-func NewConsumerHandler(svc *service.Service, registry processor.Registry, log logger.Logger) *ConsumerHandler {
+func NewConsumerHandler(svc imageService, registry processor.Registry, log logger.Logger) *ConsumerHandler {
 	return &ConsumerHandler{svc: svc, registry: registry, log: log}
 }
 

@@ -2,25 +2,35 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/wb-go/wbf/logger"
 
-	"github.com/ponchik327/ImageProcessor/internal/service"
+	"github.com/ponchik327/ImageProcessor/internal/domain"
 	"github.com/ponchik327/ImageProcessor/internal/storage"
 )
 
+// ImageService — минимальный контракт сервиса, необходимый HTTP-обработчикам.
+type ImageService interface {
+	Upload(ctx context.Context, filename, mimeType string, data []byte) (*domain.Image, error)
+	GetImageInfo(ctx context.Context, id uuid.UUID) (*domain.Image, []*domain.ImageVariant, error)
+	ListImages(ctx context.Context, limit, offset int) ([]*domain.Image, []*domain.ImageVariant, error)
+	DeleteImage(ctx context.Context, id uuid.UUID) error
+}
+
 // Handler хранит общие зависимости для всех HTTP-обработчиков.
 type Handler struct {
-	svc   *service.Service
+	svc   ImageService
 	store storage.FileStorage
 	log   logger.Logger
 }
 
 // New создаёт Handler.
-func New(svc *service.Service, store storage.FileStorage, log logger.Logger) *Handler {
+func New(svc ImageService, store storage.FileStorage, log logger.Logger) *Handler {
 	return &Handler{svc: svc, store: store, log: log}
 }
 
